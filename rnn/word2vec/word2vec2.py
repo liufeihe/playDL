@@ -82,6 +82,11 @@ class Word2Vec(object):
             self.embedding = tf.Variable(tf.random_uniform((n_vocab, n_embedding),-1,1))
             embed = tf.nn.embedding_lookup(self.embedding, self.inputs)
 
+            norm = tf.sqrt(tf.reduce_sum(tf.square(self.embedding), 1, keep_dims=True))
+            normalized_embeddings = self.embedding / norm
+            valid_embeddings = tf.nn.embedding_lookup(normalized_embeddings, valid_dataset)
+            self.similarity = tf.matmul(valid_embeddings, normalized_embeddings, transpose_b=True)
+
         with tf.variable_scope('loss'):
             # softmax_w = tf.Variable(tf.truncated_normal((n_vocab, n_embedding), stddev=1.0))
             # softmax_b = tf.Variable(tf.zeros(n_vocab))
@@ -97,16 +102,10 @@ class Word2Vec(object):
                                              num_sampled=n_sampled,
                                              num_classes=n_vocab))
 
-
         with tf.variable_scope('optimize'):
             # optimizer = tf.train.AdamOptimizer(1.0).minimize(self.loss)
             optimizer = tf.train.GradientDescentOptimizer(self.config.learning_rate).minimize(self.loss)
             self.optimizer = optimizer
-
-            norm = tf.sqrt(tf.reduce_sum(tf.square(self.embedding), 1, keep_dims=True))
-            normalized_embeddings = self.embedding/norm
-            valid_embeddings = tf.nn.embedding_lookup(normalized_embeddings, valid_dataset)
-            self.similarity = tf.matmul(valid_embeddings, normalized_embeddings, transpose_b=True)
 
     def get_batches(self):
         batch_size = self.config.batch_size
