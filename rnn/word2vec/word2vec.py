@@ -116,7 +116,7 @@ def plot_with_labels(low_dim_embs, labels, filename='tsne.png'):
 
 
 def run():
-    filename = maybe_download('text8.zip', 31344016)
+    filename = maybe_download('./data/text8.zip', 31344016)
     words = read_data(filename)
     data, count, dictionary, reverse_dictionary = build_dataset(words)
     del words
@@ -152,18 +152,17 @@ def run():
         print 'initialized.'
 
         average_loss = 0
-        for step in range(num_steps):
+        for step in range(1, num_steps+1):
             batch_inputs, batch_labels = generate_batch(data, batch_size, num_skips, skip_window)
             feed_dict = {train_inputs: batch_inputs, train_labels: batch_labels}
             _, loss_val = sess.run([optimizer, loss], feed_dict=feed_dict)
             average_loss += loss_val
             if step % 2000 == 0:
-                if step >0:
-                    average_loss /= 2000
+                average_loss /= 2000
                 print 'average loss at step ', step,': ', average_loss
                 average_loss = 0
             if step % 10000 == 0:
-                sim  = similarity.eval()
+                sim = similarity.eval()
                 for i in range(valid_size):
                     valid_word = reverse_dictionary[valid_examples[i]]
                     top_k = 8
@@ -181,8 +180,8 @@ def run():
     plot_with_labels(low_dim_embs, labels)
 
 
-def test():
-    filename = maybe_download('text8.zip', 31344016)
+def play_data():
+    filename = maybe_download('./data/text8.zip', 31344016)
     words = read_data(filename)
     print words[:100]
     print 'Data size %d' % len(words)
@@ -199,8 +198,8 @@ def test():
 
 
 def main():
-    # run()
-    test()
+    run()
+    # play_data()
 
 if __name__ == '__main__':
     main()
