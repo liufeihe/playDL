@@ -10,7 +10,7 @@ class Config(object):
     hidden_size = 100
     batch_size = 32
     learning_rate = 0.01
-    epochs = 100
+    epochs = 500
     data_path = './data/ssq'
 
 
@@ -38,23 +38,23 @@ class LotteryNN(object):
                     loss += train_loss
                     if iteration % 100 == 0:
                         end = time.time()
-                        validation_loss = sess.run([self.loss],
+                        validation_loss, y2_ = sess.run([self.loss, self.y],
                                                    feed_dict={self.inputs: valid_x, self.targets: valid_y})
                         print "Epoch {}/{}, " \
                               "Iteration: {}, " \
                               "Avg. Training loss: {:.4f}, " \
                               "Valid loss: {:.4f}, " \
-                              "{:.4f} sec/batch".format(e, epochs, iteration, loss / 100, validation_loss[0], (end - start)/100)
+                              "{:.4f} sec/batch".format(e, epochs, iteration, loss / 100, validation_loss, (end - start)/100)
+                        if e == epochs:
+                            print y2_[0]
+                            print len(y2_)
+                            print len(y2_[0])
+                            print valid_y[0]
+
                         loss = 0
                         start = time.time()
 
                     iteration += 1
-
-                    # if e == epochs:
-                    #     print y_[0]
-                    #     print len(y_)
-                    #     print len(y_[0])
-                    #     print y[0]
 
     def build_graph(self):
         cfg = self.cfg
@@ -70,11 +70,19 @@ class LotteryNN(object):
             # w = tf.Variable(tf.zeros([input_size, output_size]))
             w = tf.Variable(tf.random_uniform((input_size, output_size),-1,1))
             b = tf.Variable(tf.zeros([output_size]))
-            y = tf.sigmoid(tf.matmul(self.inputs, w) + b)
+            output = tf.matmul(self.inputs, w) + b
+            y = tf.sigmoid(output)
+            y2 = tf.sigmoid(output)
             self.y = y
         with tf.variable_scope('loss'):
-            cross_entropy = -tf.reduce_sum(self.targets * tf.log(y))
+            cross_entropy = -tf.reduce_sum(self.targets * tf.log(y2))
             self.loss = cross_entropy
+            # training_logits = tf.identity(self.y, 'logits')
+            # masks = tf.sequence_mask(output_size, output_size, dtype=tf.float32,name='masks')
+            # print training_logits.shape
+            # self.loss = tf.contrib.seq2seq.sequence_loss(training_logits, self.targets, masks)
+
+        with tf.variable_scope('optimize'):
             optimizer = tf.train.GradientDescentOptimizer(cfg.learning_rate).minimize(self.loss)
             self.optimizer = optimizer
 
